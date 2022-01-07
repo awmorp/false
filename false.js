@@ -408,7 +408,7 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
           Stack.pushVar( c );
           break;
         }
-        case "ø":
+        case "Ã¸":
         {
           /* Pick (copy nth stack element to top) */
           /* Funky opcode character is supported for compatibility reasons */
@@ -422,7 +422,7 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
           
           break;
         }
-        case "®":
+        case "Â®":
         {
             /* Rotate top n stack elements */
             /* Pops an integer n from the stack, then rotates the top n stack elements (not including n itself) */
@@ -560,11 +560,11 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
           
           break;
         }
-        case "ß":
+        case "ÃŸ":
         {
           /* Flush I/O */
           /* Unimplemented here but handled for compatibility */
-          debug( 0, "Opcode 'ß' (flush I/O) ignored (unimplemented)" );
+          debug( 0, "Opcode 'ÃŸ' (flush I/O) ignored (unimplemented)" );
           break;
         }
         case "`":
