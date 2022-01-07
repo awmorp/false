@@ -1,0 +1,5 @@
+[$1=$[\%1\]?~[$1-f;!*]?]f:
+
+4f;!.
+
+{Taken from the False specification: http://strlen.com/false/false.txt}

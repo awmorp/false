@@ -1,0 +1,93 @@
+<html>
+<!-- TODO:
+ - Make all sections collapsible (notes, stack, storage, etc)
+ - tidy up status display area
+ - better IO
+!-->
+ <head>
+  <link href="false.css" rel="stylesheet" type="text/css">
+  <title>
+   False interpreter
+  </title>
+  <script type="text/javascript" defer="defer" src="false.js">
+  </script>
+ </head>
+<!-- <body onload="LoadProgram( 'test', true ); UpdateStatusMessage( 'Load or write a False program below and click Run!' );">!-->
+ <body>
+  <div id="Header">
+   <h1>False interpreter in Javascript</h1>
+   <div class="backlinks">
+    [<a href="../default.html">Back to home page</a>]
+   </div>
+   <div id="IntroText">
+    This is an interpreter for the False language.  Read the <a href="http://strlen.com/false/false.txt">False language specification here</a>. Another Javascript False interpreter can be found <a href="http://www.quirkster.com/js/false-js.html">here</a>, and <a href="http://www.c2.com/cgi/wiki?FalseLanguage">this page</a> has some more comments and False code samples.
+    <br>
+    Notes:
+    <ul>
+     <li>Multi-character variable names are allowed. Variable names can contain only alphabetic characters, are case-sensitive and can be arbitrarily long. However, in keeping with the False aesthetic, descriptive and informative variable names are discouraged, and multi-letter names should only be used once all single-letter names are exhausted.</li>
+     <li>The 'pick' opcode "ø" is implemented and the character ø is provided here for cut-and-paste convenience.</li>
+     <li>A new 'rotate n' opcode "®" is provided. '®' will pop an integer n from the stack, then move the n'th stack element to top-of-stack.  This addresses the major shortcoming of the original False specification of not being able to modify the stack beyond the top 3 stack positions.</li>
+     <li>Input data via the pop-up input box, when required; enter a blank line or hit cancel to indicate end-of-input.</li>
+     <li>Output is unbuffered, and the 'flush' opcode "ß" is unimplemented and ignored.</li>
+     <li>Command-line arguments are not available.</li>
+     <li>The inline-assembly opcode "`" is unsupported. Instead, "`" can be used as a breakpoint for debugging False programs.</li>
+     <li>Other subtle differences exist between this interpreter and the original compiler (such as typecasting).</li>
+    </ul>
+   </div>
+  </div>
+  <div id="MachineStatus">
+   <div class="MachineStatusLabel">Stack (bottom --&gt; top)</div>
+   <div id="MachineStatusStack" class="MachineStatusBox"></div>
+   <div class="MachineStatusLabel">Current function</div>
+   <div id="MachineStatusProgram" class="MachineStatusBox">
+    <span id="MachineStatusProgramBefore"></span>
+    <span id="MachineStatusProgramCurrent"></span>
+    <span id="MachineStatusProgramAfter"></span>
+   </div>
+   <div class="MachineStatusLabel">Storage</div>
+   <div id="MachineStatusStorage" class="MachineStatusBox"></div>
+   <div class="MachineStatusLabel">Output</div>
+   <div id="MachineStatusOutput" class="MachineStatusBox">
+   </div>
+   <div id="MachineStatusMessagesContainer"></div>
+  </div> <!-- div MachineStatus !-->
+  <div style="text-align: center; width: 100%;">
+   <div id="buttons">
+    <button id="RunButton" onclick="RunButtonPressed();">Run</button>
+    <button id="PauseButton" onclick="PauseButtonPressed();" disabled="true">Pause</button>
+    <button id="StepButton" onclick="StepButtonPressed();">Step</button>
+    <button id="ResetButton" onclick="ResetButtonPressed();">Reset</button>
+<!--    <button id="DebugButton" onclick="x();" class="DebugClass">Debug</button> !-->
+    <input type="checkbox" id="TurboCheckbox" onclick="TurboCheckboxPressed();" />Run at full speed
+   </div> <!-- div buttons !-->
+   <div id="inputProg">
+   False program:<br>
+<!-- no indenting, because text inside textarea is verbatim !-->
+<textarea id="ProgramSource" wrap="off">
+{ Load a program from the menu below or write your own! }
+</textarea>
+    <br>
+    Example programs:
+    <select id="LoadSelector">
+     <option value="factorial">Factorial</option>
+     <option value="factorial2">Factorial version 2</option>
+     <option value="stringreverse">Reverse a string</option>
+     <option value="primes">Primes list</option>
+     <option value="quine">Quine</option>
+     <option value="bf false">Brainfuck interpreter</option>
+     <!-- Corresponding program should be stored on the server in a file <value>.txt, eg factorial.txt !-->
+    </select>
+    <button id="LoadButton" onclick="LoadProgram( document.getElementById( 'LoadSelector' ).value, false );">Load</button>
+   </div> <!-- div inputProg !-->
+  </div> <!-- div text-align: center !-->
+  <div class="Signature">
+   -- <a href="../default.html">Anthony Morphett</a> - awmorp @ gmail.com
+  </div>
+  <div id="debugOuter" class="DebugClass">
+   Debug messages: <button id="ClearDebugButton" onclick="ClearDebug();">clear</button>
+   <div id="debug">
+   </div> <!-- div debug !-->
+  </div> <!-- div debugOuter !-->
+  <img id="counter" style="display: none;" src="/cgi-bin/counter?awm-TM">
+ </body>
+</html>

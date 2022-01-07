@@ -1,0 +1,290 @@
+{ This is a Brainfuck interpreter in False.
+  See http://www.muppetlabs.com/~breadbox/bf/ for details of the Brainfuck language.
+  Enter a Brainfuck program when prompted for input.
+ 
+  Sample BF programs:
+
+  add two numbers
+  +++>++++<[->+<]
+ 
+  Hello world (from Wikipedia) - takes 343445 steps and approx 20 minutes
+  ++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.  Hello world
+}
+
+
+
+{ insert-n: insert the element x to the n'th stack position. Stack effect: ...s_n+1 s_n s_n-1 ... s_0 x n ->s_n+1 s_n x s_n-1 ... s_0 }
+[$3+\[$0=~][\$®@@\1-]#%%]i:
+
+{ set-n: set the n'th stack element to x. Stack effect: ...s_n+1 s_n s_n-1 ...s_0 x n -> ...s_n+1 x s_n-1 ... s_0 }
+[$3+®%i;!]s:
+
+{delete-n: delete the n'th stack element. Stack effect: ...s_n+1 s_n s_n-1 ... s_0 n -> s_n+1 s_n-1 ... s_0 }
+[1+®%]d:
+
+
+{ getXX: Retrieves the XX value and puts it at TOS. First argument should be distance of 'z' from TOS (0 if 'z' is at TOS, except for the 0). }
+[1+ø]getip:  { Get instruction pointer value }
+[2+ø]getdp:  { Get data pointer value }
+[3+ø]getsl:  { Get storage length }
+[4+ø]getpl:  { Get program length }
+[4]getcl:    { Get size of static storage area (excluding markers) }
+
+{ setXX: Sets the XX value to the value x from TOS-1. Args: x depth }
+[1+s;!]setip:
+[2+s;!]setdp:
+
+[$1+getip;!1+\setip;!]incip:
+[$1+getip;!1-\setip;!]decip:
+
+{ inputprog: read data from input (until end-of-file) and store it on the stack. }
+[0[^$1_=~][\1+]#%]inputprog:
+
+
+{ load some bf program for debugging }
+[
+'+ '+ 93 3
+]inputprogX:
+
+
+{ readprog: Retrieves the n'th byte of the program. First argument should be distance of 'z' from TOS (not including arguments); 2nd argument is n.  Returns the n'th byte of the program, or -1 if index is out of range. }
+
+[\$1_>$~  { test if input is negative }
+[%%%1_$0=]?  { if negative, abort and return -1 }
+[\$2+getpl;!@\$@$@\>$~    { test if input is greater than size of program }
+[%%%%1_$0=]?  { if input is out of bounds, return -1 }
+[\@$3+getsl;!getcl;!3++++\1+-ø]?]?  { otherwise, add up all the offsets and get the byte }
+]readprog:
+
+{ readdata: Retrieves the n'th byte from the storage array. First arg is distance of 'z' from TOS (not incl args). 2nd argument is n. Returns the n'th byte from storage (or 0 if out of range). }
+[
+\$1_>$~  { test if input is negative }
+[%%%0$1=]?  { if negative, abort and return 0 }
+[\$2+getsl;!@\$@$@\>$~    { test if input is greater than size of storage }
+[%%%%0$1=]?  { if input is out of bounds, return 0 }
+[\@getcl;!2+++\1+-ø]?]?  { otherwise, add up all the offsets and get the byte }
+]
+readdata:
+
+
+{ storedata: stores x at the n'th byte of the storage array, extending the storage array if necessary. Arguments: distance of 'z', n, x. Returns nothing.
+Note that storedata will modify the data pointer, if n is < 0 or >- storage size.  Therefore the caller should consider the data pointer to be volatile.
+}
+[
+  { if n < -1: recursively call storedata 0 (n+1) to pad intervening region. }
+  \$2_>$~  { if n < -1 }
+  [
+   0 3ø4+prependdata;!  { prepend a 0 to storage area }
+   %1+\storedata;!  { recursifely call storedata x n+1 }
+   1 0= { clean up }
+  ]?
+  [
+   { if n == -1: prepend x to storage area }
+   $1_=~$~  { if n == -1 }
+   [
+    %%prependdata;!  { prepend x to storage area }
+    0 1= { clean up }
+   ]?
+   [
+    { if n < storage length: store the byte }
+    $2ø4+getsl;!1->$~  { if n < storage length }
+    [
+     { store the byte }
+     3ø3ø5+getsl;!getcl;!+2+4ø+4+3ø1+-s;!
+     %%%%1 0= { clean up }
+    ]?
+    [
+     { if n == storage length, append x to storage area }
+     1ø3+getsl;!1ø=~$~ { if n == storage length }
+     [
+      %%appenddata;!  { append x to storage area }
+      0 1= { clean up }
+     ]?
+     [
+      { else, n > storage length }
+      0 2ø3+appenddata;! { append a 0 to storage area }
+      \storedata;!  { recursively call storedata }
+      { no cleanup necessary }
+     ]?
+    ]?
+   ]?
+  ]?
+]storedata:
+
+
+{ appenddata : appends a byte x to the storage array (increasing the size of the array). Arguments: distance of 'z', x. Returns: none }
+[
+ { insert the byte }
+ $@\1+getcl;!2++i;!
+ { increment storage length }
+ $1+getsl;!1+\3+s;!
+]appenddata:
+
+{ prependdata : prepends a byte x to the storage array (increasing the size of the array). Arguments: distance of 'z', x. Returns: none }
+[
+ { insert the byte }
+ $@@1+$2+getsl;!getcl;!+2++i;!
+ { increment storage length }
+ $1+$1+getsl;!1+\3+s;!
+ { increment data pointer }
+ $1+getdp;!1+\setdp;!
+]prependdata:
+
+{ plus: Handle + opcode. Args: distance of 'z' from TOS. Return: none }
+{ TODO: Should we do addition modulo 256? }
+[
+$$$3+getdp;!\2+readdata;!1+\2+getdp;!@storedata;!
+]
+plus:
+
+{ minus: Handle - opcode. Args: distance of 'z' from TOS. Return: none }
+{ TODO: Should we do addition modulo 256? }
+[
+$$$3+getdp;!\2+readdata;!1-\2+getdp;!@storedata;!
+]minus:
+
+{ left: Handle < opcode. Args: distance of 'z' from TOS. Return: none }
+[
+$1+getdp;!1-\setdp;!
+]left:
+
+{ right: Handle > opcode. Args: distance of 'z' from TOS. Return: none }
+[
+$1+getdp;!1+\setdp;!
+]right:
+
+{ dot: Handle . opcode. Args: distance of 'z' from TOS. Return: none }
+[
+$1+getdp;!\readdata;!,
+]dot:
+
+{ comma: Handle , opcode. Args: distance of 'z' from TOS. Return: none }
+[
+^\$2+getdp;!\storedata;!
+]comma:
+
+{ openbracket: Handle [ opcode. Args: distance of 'z' from TOS. Return: none }
+[
+ $$2+getdp;!\1+readdata;!0=$~
+ [ { if *dp != 0, continue }
+  \1+incip;!
+ ]?
+ [ { if *dp == 0, search for matching close-bracket and jump to it }
+  1
+  [
+   \$@@$3+incip;!$3+getip;!\2+readprog;!  { increment ip and read the next opcode }
+   $1_=~$~
+   [ { if reached end of program, abort }
+    "BF error: Unbalanced brackets!"
+    { ip has already been incremented beyond the end of the program, so interpreter will stop at next step. }
+    %%%%1 0=$ { clean up }
+   ]?
+   [ { haven't reached end of program. Check if opcode is open-bracket. }
+    $91=~$~
+    [ { opcode is open-bracket. increment k and continue. }
+     @1+@@\%~$~ { clean up }
+    ]?
+    [ { opcode isn't open-bracket. Check if opcode is close-bracket. }
+     $93=~$~
+     [ { opcode is close-bracket }
+      @1-$0=$~
+      [ { haven't found the matching bracket. Continue. }
+       %@@%%0 0=$~$ { clean up }
+      ]?
+      [ { found matching bracket. }
+       %%%$1+incip;!%0 1=$ { increment ip past the bracket and clean up }
+      ]?
+     ]?
+     [ { opcode is not a bracket. Skip it. }
+      %0 0= { clean up }
+     ]?
+    ]?
+   ]?
+  ][]#
+ ]?
+]openbracket:
+
+{ closebracket: Handle ] opcode. Args: distance of 'z' from TOS. Return: none }
+[ {closebracket}
+ $$2+getdp;!\1+readdata;!0=~$~
+ [ { if *dp == 0, continue }
+  \1+incip;!
+ ]?
+ [ { if *dp != 0, search for matching open-bracket and jump to it }
+  1
+  [
+   \$@@$3+decip;!$3+getip;!\2+readprog;!  { decrement ip and read the next opcode }
+   $1_=~$~
+   [ { if reached end of program, abort. }
+    "BF error: Unbalanced brackets!"
+    { ip has already been decremented beyond the end of the program, so interpreter will stop at next step. }
+    %%%%1 0=$ { clean up }
+   ]?
+   [ { haven't reached end of program. Check if opcode is close-bracket. }
+    $93=~$~
+    [ { opcode is close-bracket. increment k and continue. }
+     @1+@@\%~$~ { clean up }
+    ]?
+    [ { opcode isn't close-bracket. Check if opcode is open-bracket. }
+     $91=~$~
+     [ { opcode is open-bracket }
+      @1-$0=$~
+      [ { haven't found the matching bracket. Continue. }
+       %@@%%0 0=$~$ { clean up }
+      ]?
+      [ { found matching bracket. }
+       %%%$1+incip;!%0 1=$ { increment ip past the bracket and clean up }
+      ]?
+     ]?
+     [ { opcode is not a bracket. Skip it. }
+      %0 0= { clean up }
+     ]?
+    ]?
+   ]?
+  ][]#
+ ]?
+]closebracket:
+
+
+{ step: perform one step of the bf computation. Input: single character opcode and depth. }
+[\$'+=~$~[2ø3+ plus;! 2ø3+incip;!]?  { handle + opcode }
+ [$'-=~$~[2ø3+ minus;! 2ø3+incip;!]? { handle - opcode }
+  [$'<=~$~[2ø3+ left;! 2ø3+incip;!]? { handle < opcode }
+   [$'>=~$~[2ø3+ right;! 2ø3+incip;!]? { handle > opcode }
+    [$'.=~$~[2ø3+ dot;! 2ø3+incip;!]? { handle . opcode }
+     [$',=~$~[2ø3+ comma;! 2ø3+incip;!]? { handle , opcode }
+      [$91=~$~[2ø3+ openbracket;!]?  { Note: workaround for parsing bug }
+       [$93=~$~[2ø3+ closebracket;!]?  { Note: workaround for parsing bug }
+        [ 1ø2+incip;! ]? { Otherwise - unrecognised opcode. Ignore it and increment IP. }
+       ]?
+      ]?
+     ]?
+    ]?
+   ]?
+  ]?
+ ]?
+%% {clean up}
+]step:
+
+[[0getip;!0readprog;!$1_=~][0step;!]#]mainloop:  { Note: mainloop assumes depth = 0 }
+
+[
+ inputprog;! { input BF program }
+ x\0\y\1 0 0z { set up storage space }
+ mainloop;! { start the interpreter }
+]main:
+main;!
+
+{ Stack layout:
+   (bottom of stack)
+   [ BF Program, stored left-to-right as ascii bytes ]
+   "x" (marker - literal name used as marker for debugging) 
+   [ bf storage array, stored left-to-right as integers ]
+   "y" (marker)
+   length of program array, integer
+   length of storage array, integer
+   current data pointer (from 0), integer
+   current instruction pointer (from 0), integer
+   "z" (marker)
+   working stack space
+}

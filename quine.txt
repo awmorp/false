@@ -1,0 +1,3 @@
+{ Prints its own source code. Taken from http://www.nyx.net/~gthompso/self_fals.txt }
+
+["'[,34,$!34,'],!"]'[,34,$!34,'],!

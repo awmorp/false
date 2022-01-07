@@ -1,0 +1,109 @@
+/* CSS Stylesheet for Javascript False interpreter */
+
+body {
+  text-align: center;
+}
+
+#debugOuter {
+  clear: both;
+}
+
+#MachineStatus {
+  border: 1px dashed red;
+  background-color: #ffdfda;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  margin-left: 1%;
+  margin-right: 1%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 90%;
+/*  height: 10em; */
+  text-align: center;
+}
+
+.MachineStatusBox {
+  border: 1px solid grey;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  margin-top: 5px;
+  margin-bottom: 8px;
+/*  text-align: center; */
+  font-family: "Courier New", courier;
+}
+
+#MachineStatusLowerBlock {
+  text-align: center;
+  height: 4em;
+  position: relative;
+  width: 100%;
+}
+
+#MachineStatusMessagesContainer {
+  text-align: center;
+/*  height: 3em; */
+/*  display: inline;
+  position: relative;
+  bottom: -2em; */
+  font-size: larger;
+}
+
+#MachineStatusProgramCurrent {
+  background-color: #ddffff;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+#MachineStatusProgramBefore {
+  color: #666666;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+#MachineStatusProgramAfter {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+#ProgramSource {
+  margin-top: 10px;
+  width: 90%;
+  height: 100px;
+}
+
+#IntroText {
+  text-align: left;
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+h1 {
+  margin-bottom: 0.2em;
+}
+
+.backlinks {
+  text-align: center;
+  margin-bottom: 0.2em;
+}
+
+.Signature {
+  text-align: right;
+  font-style: italic;
+  font-size: smaller;
+}
+
+.DebugClass {
+/*  display: none;*/
+}
