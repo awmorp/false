@@ -1,0 +1,5 @@
+{ Greatest common divisor via the Euclidean method }
+
+[1ø1ø>[\]?{ swap if decending }[1ø0>][$2ø/2ø*-\{a,b -> b mod a, a}]#\%]gcd:
+
+724715 85140 gcd;!.
