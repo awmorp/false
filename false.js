@@ -74,7 +74,7 @@ let Storage = {
   {
     let str = "";
     let bFirst = true;
-    for( x in this.aData ) {
+    for( const x in this.aData ) {
       if( !bFirst ) str += ", ";
       str += x;
       str += ' = ';
@@ -1017,7 +1017,7 @@ function LoadProgram( zName, bResetWhenLoaded )
   }
 }
 
-function x()
+function CycleDebugLevel()
 {
   g_nDebugLevel = (g_nDebugLevel + 1) % 10;
   debug( 1, "Debug level now " + g_nDebugLevel );
