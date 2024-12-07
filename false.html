@@ -29,6 +29,7 @@
      <li>Multi-character variable names are allowed. Variable names can contain only alphabetic characters, are case-sensitive and can be arbitrarily long. However, in keeping with the False aesthetic, descriptive and informative variable names are discouraged, and multi-letter names should only be used once all single-letter names are exhausted.</li>
      <li>The 'pick' opcode "ø" is implemented and the character ø is provided here for cut-and-paste convenience.</li>
      <li>A new 'rotate n' opcode "®" is provided. '®' will pop an integer n from the stack, then move the n'th stack element to top-of-stack.  This addresses the major shortcoming of the original False specification of not being able to modify the stack beyond the top 3 stack positions.</li>
+     <li>New bitwise not, and, or, & xor opcodes are ¬, ∧, ∨, & ⩒ respectively</li>
      <li>Input data via the pop-up input box, when required; enter a blank line or hit cancel to indicate end-of-input.</li>
      <li>Output is unbuffered, and the 'flush' opcode "ß" is unimplemented and ignored.</li>
      <li>Command-line arguments are not available.</li>
@@ -77,6 +78,7 @@
      <option value="primes">Primes list</option>
      <option value="quine">Quine</option>
      <option value="bf false">Brainfuck interpreter</option>
+     <option value="gcd">Greatest common divisor</option>
      <!-- Corresponding program should be stored on the server in a file <value>.txt, eg factorial.txt !-->
     </select>
     <button id="LoadButton" onclick="LoadProgram( document.getElementById( 'LoadSelector' ).value, false );">Load</button>

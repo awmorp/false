@@ -19,35 +19,35 @@
 */
 
 
-var g_nDebugLevel = 1;
+let g_nDebugLevel = 1;
 
 /* Current continuation and step timer */
 
-var g_oTimer = null;
-var g_nStepPeriod = 100;  /* milliseconds between steps */
-var g_oCurrentContinuation = null;
+let g_oTimer = null;
+let g_nStepPeriod = 100;  /* milliseconds between steps */
+let g_oCurrentContinuation = null;
 
-var g_bTurbo = false;
-var g_bRunning = true;
+let g_bTurbo = false;
+let g_bRunning = true;
 
-var g_nStepCount = 0;
-var g_nStartTime = 0;
+let g_nStepCount = 0;
+let g_nStartTime = 0;
 
 /* UI helper global variables */
 
-var g_zActiveFunction = "";
-var g_nActivePosition = 0;
+let g_zActiveFunction = "";
+let g_nActivePosition = 0;
 
 /* Input buffer */
 
-var g_zInputBuf = "";
+let g_zInputBuf = "";
 
 /* Output */
-var g_zOutput = "";
+let g_zOutput = "";
 
 /** Storage object **/
 
-var Storage = {
+let Storage = {
   aData: new Object,
   
   clear: function()
@@ -57,7 +57,7 @@ var Storage = {
   
   getData: function( zName )
   {
-    var z = this.aData[ zName ];
+    let z = this.aData[ zName ];
     if( z == null ) {
       throw( new Error( "Attempt to retrieve uninitialised variable '" + zName + "'!" ) );
     } else {
@@ -72,8 +72,8 @@ var Storage = {
   
   dump: function()
   {
-    var str = "";
-    var bFirst = true;
+    let str = "";
+    let bFirst = true;
     for( x in this.aData ) {
       if( !bFirst ) str += ", ";
       str += x;
@@ -87,7 +87,7 @@ var Storage = {
 
 /** Stack object **/
 
-var Stack = {
+let Stack = {
   aData: new Array,
 
   clear: function()
@@ -113,7 +113,7 @@ var Stack = {
   
   pushInt : function( x )
   {
-    var a = new Object;
+    let a = new Object;
     a.value = x;
     a.type = "int";
     this.aData.push( a );
@@ -121,7 +121,7 @@ var Stack = {
   
   pushBool : function( x )
   {
-    var a = new Object;
+    let a = new Object;
     a.value = x;
     a.type = "bool";
     this.aData.push( a );
@@ -129,7 +129,7 @@ var Stack = {
   
   pushString : function( x )
   {
-    var a = new Object;
+    let a = new Object;
     a.value = x;
     a.type = "string";
     this.aData.push( a );
@@ -137,7 +137,7 @@ var Stack = {
   
   pushFunction : function( x )
   {
-    var a = new Object;
+    let a = new Object;
     a.value = x;
     a.type = "function";
     this.aData.push( a );
@@ -145,7 +145,7 @@ var Stack = {
   
   popInt : function()
   {
-    var a = this.popVar();
+    let a = this.popVar();
     if( a.type != "int" ) {
       if( a.type == "bool" ) {
         debug( 1, "Warning: typecast from bool to int!" );
@@ -160,7 +160,7 @@ var Stack = {
   
   popBool : function()
   {
-    var a = this.popVar();
+    let a = this.popVar();
     if( a.type != "bool" ) {
       if( a.type == "int" ) {
         debug( 1, "Warning: typecast from int to bool!" );
@@ -175,7 +175,7 @@ var Stack = {
   
   popString : function()
   {
-    var a = this.popVar();
+    let a = this.popVar();
     if( a.type != "string" ) {
       this.pushVar( a );
       throw( new Error( "Type error: popString tried to pop a " + a.type + "!" ) );
@@ -186,7 +186,7 @@ var Stack = {
   
   popFunction : function()
   {
-    var a = this.popVar();
+    let a = this.popVar();
     if( a.type != "function" ) {
       if( a.type == "string" ) {
         debug( 1, "Warning: typecast from string to function!" );
@@ -211,8 +211,8 @@ var Stack = {
   
   dump : function()
   {
-    var str = "";
-    var bFirst = true;
+    let str = "";
+    let bFirst = true;
     for( x in this.aData ) {
       if( !bFirst ) str += ", ";
       str += DumpVar( this.aData[x] );
@@ -256,128 +256,159 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
   
   debug( 5, "ExecuteStep( '" + zString + "', " + nPos + " )" );
 
-  var oNextContinuation = null;
+  let oNextContinuation = null;
   
-  var zActiveString = zString.substr( nPos );
-  var c = zActiveString.charAt( 0 );
+  let zActiveString = zString.substring( nPos );
+  let token = zActiveString.charAt( 0 );
   
-  var nLength = 0;
-  var bUIUpdated = false;
+  let nLength = 0;
+  let bUIUpdated = false;
   
   try {
-    if( isdigit( c ) )
+    if( isdigit( token ) )
     {
       nLength = ParseNumber( zActiveString );
     }
-    else if( isalpha( c ) )
+    else if( isalpha( token ) )
     {
       nLength = ParseName( zActiveString );
     }
-    else if( c == "{" )
+    else if( token == "{" )
     {
       nLength = ParseComment( zActiveString );
     }
-    else if( c == "[" )
+    else if( token == "[" )
     {
       nLength = ParseFunction( zActiveString );
     }
-    else if( c == "\"" )  /* double-quote */
+    else if( token == "\"" )  /* double-quote */
     {
       nLength = ParseString( zActiveString );
     }
-    else if( c == "'" )  /* literal character */
+    else if( token == "'" )  /* literal character */
     {
       nLength = ParseChar( zActiveString );
     }
     else {
-      switch( c )   /* Handle single-char opcodes */
+      let a, b, c, oReturnContinuation;
+      switch( token )   /* Handle single-char opcodes */
       {
         case "+":
         {
           /* Integer addition */
-          var a = Stack.popInt();
-          var b = Stack.popInt();
+          a = Stack.popInt();
+          b = Stack.popInt();
           Stack.pushInt( a + b );
           break;
         }
         case "-":
         {
           /* Integer subtraction */
-          var a = Stack.popInt();
-          var b = Stack.popInt();
+          a = Stack.popInt();
+          b = Stack.popInt();
           Stack.pushInt( b - a );
           break;
         }
         case "_":
         {
           /* Unary integer negation */
-          var a = Stack.popInt();
-          a = -a;
-          Stack.pushInt( a );
+          a = Stack.popInt();
+          Stack.pushInt( -a );
           break;
         }
         case "*":
         {
           /* Integer multiplication */
-          var a = Stack.popInt();
-          var b = Stack.popInt();
+          a = Stack.popInt();
+          b = Stack.popInt();
           Stack.pushInt( a * b );
           break;
         }
         case "/":
         {
           /* Integer division */
-          var a = Stack.popInt();
-          var b = Stack.popInt();
+          a = Stack.popInt();
+          b = Stack.popInt();
           if( a == 0 ) {
             throw( new Error( "Attempt to divide by zero!" ) );
           }
-          Stack.pushInt( (b - (b % a)) / a ); /* Javascript doesn't provide integer division so emulate it */
+          Stack.pushInt( b / a );
           break;
         }
         case "=":
         {
           /* Equality comparison */
-          var a = Stack.popInt();
-          var b = Stack.popInt();
+          a = Stack.popInt();
+          b = Stack.popInt();
           Stack.pushBool( a == b );
           break;
         }
         case ">":
         {
           /* Magnitude comparison */
-          var a = Stack.popInt();
-          var b = Stack.popInt();
+          a = Stack.popInt();
+          b = Stack.popInt();
           Stack.pushBool( b > a );
           break;
         }
         case "~":
         {
           /* Boolean negation */
-          var a = Stack.popBool();
+          a = Stack.popBool();
           Stack.pushBool( !a );
           break;
         }
         case "&":
         {
           /* Boolean and */
-          var a = Stack.popBool();
-          var b = Stack.popBool();
+          a = Stack.popBool();
+          b = Stack.popBool();
           Stack.pushBool( a && b );
           break;
         }
         case "|":
         {
           /* Boolean or */
-          var a = Stack.popBool();
-          var b = Stack.popBool();
+          a = Stack.popBool();
+          b = Stack.popBool();
           Stack.pushBool( a || b );
+          break;
+        }
+        case "¬":
+        {
+          /* Bitwise not */
+          a = Stack.popInt();
+          Stack.pushInt(~a);
+          break;
+        }
+        case "∧":
+        {
+          /* Bitwise and*/
+          a = Stack.popInt();
+          b = Stack.popInt()
+          Stack.pushInt(a & b);
+          break;
+        }
+        case "∨":
+        {
+          /* Bitwise or*/
+          a = Stack.popInt();
+          b = Stack.popInt();
+          Stack.pushInt(a | b);
+          break;
+        }
+        case "⩒":
+        {
+          /* Bitwise xor*/
+          a = Stack.popInt();
+          b = Stack.popInt();
+          Stack.pushInt(a ^ b);
           break;
         }
         case "$":
         {
           /* Duplicate top of stack */
-          var a = Stack.popVar();
+          a = Stack.popVar();
           Stack.pushVar( a );
           Stack.pushVar( a );
           break;
@@ -385,14 +416,14 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case "%":
         {
           /* Delete top of stack */
-          var a = Stack.popVar();
+          a = Stack.popVar();
           break;
         }
         case "\\":
         {
           /* Swap top 2 stack elements */
-          var a = Stack.popVar();
-          var b = Stack.popVar();
+          a = Stack.popVar();
+          b = Stack.popVar();
           Stack.pushVar( a );
           Stack.pushVar( b );
           break;
@@ -400,9 +431,9 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case "@":
         {
           /* Rotate top 3 stack elements */
-          var a = Stack.popVar();
-          var b = Stack.popVar();
-          var c = Stack.popVar();
+          a = Stack.popVar();
+          b = Stack.popVar();
+          c = Stack.popVar();
           Stack.pushVar( b );
           Stack.pushVar( a );
           Stack.pushVar( c );
@@ -413,11 +444,11 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
           /* Pick (copy nth stack element to top) */
           /* Funky opcode character is supported for compatibility reasons */
           /* Is there another opcode character we could use here? */
-          var a = Stack.popInt();
-          if( a < 0 || a >= Stack.size() ) {
+          a = Stack.popInt();
+          if( a < 0n || a >= 9007199254740991n || a >= Stack.size() ) {
             throw( new Error( "Argument " + a + " out of range for pick opcode!" ) );
           }
-          var b = Stack.getVar( a );
+          b = Stack.getVar( Number( a ) );
           Stack.pushVar( b );
           
           break;
@@ -426,12 +457,12 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         {
             /* Rotate top n stack elements */
             /* Pops an integer n from the stack, then rotates the top n stack elements (not including n itself) */
-            var n = Stack.popInt();
-            if( n < 0 || n > Stack.size() ) {
+            n = Stack.popInt();
+            if( n < 0n || n > 9007199254740991n || n > Stack.size() ) {
               throw( new Error( "Argument " + n + " out of range for rotate n opcode!" ) );
             }
-            if( n > 1 ) {   /* 'Rotate 0' or 'Rotate 1' has no effect, so do nothing in that case */
-              var a = Stack.dropVar( n )[0];
+            if( n > 1n ) {   /* 'Rotate 0' or 'Rotate 1' has no effect, so do nothing in that case */
+              a = Stack.dropVar( Number( n ) )[0];
               Stack.pushVar( a );
             }
             
@@ -440,9 +471,9 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case "!":
         {
           /* Apply function */
-          var a = Stack.popFunction();
+          a = Stack.popFunction();
           
-          var oReturnContinuation = function() {
+          oReturnContinuation = function() {
             ExecuteStep( zString, nPos + 1, oFinalContinuation );
           }
           
@@ -459,8 +490,8 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case ":":
         {
           /* Set variable */
-          var a = Stack.popString();
-          var b = Stack.popVar();
+          a = Stack.popString();
+          b = Stack.popVar();
           
           Storage.setData( a, b );
           break;
@@ -468,9 +499,9 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case ";":
         {
           /* Retrieve variable */
-          var a = Stack.popString();
+          a = Stack.popString();
           
-          var b = Storage.getData( a );
+          b = Storage.getData( a );
           
           Stack.pushVar( b );
           break;
@@ -478,11 +509,11 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case "?":
         {
           /* If */
-          var a = Stack.popFunction();
-          var b = Stack.popBool();
+          a = Stack.popFunction();
+          b = Stack.popBool();
           
           if( b ) {
-            var oReturnContinuation = function() {
+            oReturnContinuation = function() {
               ExecuteStep( zString, nPos + 1, oFinalContinuation );
             }
           
@@ -499,19 +530,19 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case "#":
         {
           /* While loop */
-          var a = Stack.popFunction();
-          var b = Stack.popFunction();
+          a = Stack.popFunction();
+          b = Stack.popFunction();
           
           /* The following is a continuation-style way of saying:
             while( Execute( b ), c = Stack.popBool(), c ) { Execute( a ); }
           */
           
-          var oReturnContinuation = function() {
+          oReturnContinuation = function() {
             ExecuteStep( zString, nPos + 1, oFinalContinuation );
           }
           
-          var oConditionalContinuation = function() {
-            var c = Stack.popBool();
+          let oConditionalContinuation = function() {
+            let c = Stack.popBool();
             
             if( c ) {
               ExecuteStep( a, 0, oNextContinuation );   /* Note the advance use of oNextConditional. When this is executed, oNextConditional will be bound to the function defined below. */
@@ -532,7 +563,7 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case ".":
         {
           /* Output an integer */
-          var a = Stack.popInt();
+          a = Stack.popInt();
 
           Output( a );
           
@@ -541,20 +572,20 @@ function ExecuteStep( zString, nPos, oFinalContinuation )
         case ",":
         {
           /* Output a character */
-          var a = Stack.popInt();
-          if( a < 0 ) {
+          a = Stack.popInt();
+          if( a < 0n || a > 65535n) {
             throw( new Error( "Parameter " + a + " out of range for opcode ','!" ) );
             /* Actually, Javascript happily converts negative numbers to chars. Could omit this test. */
           }
           
-          Output( String.fromCharCode( a ) );
+          Output( String.fromCharCode( Number( a ) ) );
           
           break;
         }
         case "^":
         {
           /* Input a character */
-          var a = Input();
+          a = Input();
           
           Stack.pushInt( a );
           
@@ -634,10 +665,10 @@ function ParseChar( zString )
 
 function ParseNumber( zString )
 {
-  var zDigits = zString.match( /^[0-9]+/ )[0];
+  let zDigits = zString.match( /^[0-9]+/ )[0];
   
-  var a = parseInt( zDigits );
-  debug( 8, "ParseNumber( '" + zString + "' ): matched '" + zDigits + "', parsed " + a + ", returning '" +zString.substr( zDigits.length ) + "'" );
+  let a = BigInt( zDigits );
+  debug( 8, "ParseNumber( '" + zString + "' ): matched '" + zDigits + "', parsed " + a + ", returning '" +zString.substring( zDigits.length ) + "'" );
   Stack.pushInt( a );
   
   return( zDigits.length );
@@ -645,9 +676,9 @@ function ParseNumber( zString )
 
 function ParseName( zString )
 {
-  var zName = zString.match( /^[a-zA-Z]+/ )[0];
+  let zName = zString.match( /^[a-zA-Z]+/ )[0];
 
-  debug( 8, "ParseName( '" + zString + "' ): matched '" + zName + "', returning '" +zString.substr( zName.length ) + "'" );
+  debug( 8, "ParseName( '" + zString + "' ): matched '" + zName + "', returning '" +zString.substring( zName.length ) + "'" );
   
   Stack.pushString( zName );
   
@@ -657,11 +688,11 @@ function ParseName( zString )
 function ParseString( zString )
 {
   /* TODO: support escapes */
-  var zQuote = zString.match( /^\"[^\"]*\"/ )[0];
+  let zQuote = zString.match( /^\"[^\"]*\"/ )[0];
   /* TODO: if no closing quote, throw exception */
-  var zText = zQuote.substr( 1, zQuote.length - 2 );
+  let zText = zQuote.substring( 1, zQuote.length - 1 );
 
-  debug( 8, "ParseString( '" + zString + "' ): matched '" + zQuote + "', parsed " + zText + ", returning '" +zString.substr( zQuote.length ) + "'" );
+  debug( 8, "ParseString( '" + zString + "' ): matched '" + zQuote + "', parsed " + zText + ", returning '" +zString.substring( zQuote.length ) + "'" );
   
   Output( zText );
   
@@ -670,8 +701,8 @@ function ParseString( zString )
 
 function ParseComment( zString )
 {
-  var nLength = 0;
-  var nDepth = 0;
+  let nLength = 0;
+  let nDepth = 0;
   do {
 //    debug( 6, "ParseComment( '" + zString + "' ) depth: " + nDepth + " length: " + nLength + " zString[nLength]: " + zString[nLength] );
     if( nLength >= zString.length ) {
@@ -683,15 +714,15 @@ function ParseComment( zString )
     nLength++;
   } while( nDepth != 0 );
   
-  debug( 8, "ParseComment( '" + zString + "' ): matched '" + zString.substr( 0, nLength ) + "', returning '" +zString.substr( nLength ) + "'" );
+  debug( 8, "ParseComment( '" + zString + "' ): matched '" + zString.substring( 0, nLength ) + "', returning '" +zString.substring( nLength ) + "'" );
   
   return( nLength );
 }
 
 function ParseFunction( zString )
 {
-  var nLength = 0;
-  var nDepth = 0;
+  let nLength = 0;
+  let nDepth = 0;
   do {
     if( nLength >= zString.length ) {
       /* Unbalanced brackets, throw exception */
@@ -706,15 +737,14 @@ function ParseFunction( zString )
       nLength++;
     }
     else if( zString.charAt( nLength ) == "{" ) {
-      var nRemaining = ParseComment( zString.substr( nLength ) );
-      nLength += nRemaining;
+      nLength += ParseComment( zString.substring( nLength ) );
     }
     else {
       nLength++;
     }
   } while( nDepth != 0 );
 
-  var zCode = zString.substr( 1, nLength - 2 ); /* Extract the program code, not including opening/closing [] */
+  let zCode = zString.substring( 1, nLength - 1 ); /* Extract the program code, not including opening/closing [] */
   
   debug( 8, "ParseFunction() parsed '" + zCode + "'" );
   
@@ -726,7 +756,7 @@ function ParseFunction( zString )
 
 function Output( msg )
 {
-  g_zOutput += msg;
+    g_zOutput += msg;
 }
 
 function Input()
@@ -737,8 +767,8 @@ function Input()
 
   if( g_zInputBuf != "" && g_zInputBuf != null )
   {
-    var c = g_zInputBuf.charCodeAt( 0 );
-    g_zInputBuf = g_zInputBuf.substr( 1 );
+    let c = g_zInputBuf.charCodeAt( 0 );
+    g_zInputBuf = g_zInputBuf.substring( 1 );
     return( c );
   }
   else
@@ -750,10 +780,10 @@ function Input()
 /* UpdateUI: display the stack, storage and active function in the display area */
 function UpdateUI()
 {
-  var oNode = document.getElementById( "MachineStatusStack" );
+  let oNode = document.getElementById( "MachineStatusStack" );
   while( oNode.hasChildNodes() ) oNode.removeChild( oNode.firstChild );
   
-  var oTmp = document.createElement( "pre" );
+  let oTmp = document.createElement( "pre" );
   oTmp.appendChild( document.createTextNode( Stack.dump() ) );
   oNode.appendChild( oTmp );
   
@@ -772,11 +802,11 @@ function UpdateUI()
   oNode.appendChild( oTmp );
   oTmp = document.createElement( "pre" );
   oTmp.id = "MachineStatusProgramCurrent";
-  oTmp.appendChild( document.createTextNode( g_zActiveFunction.substr( g_nActivePosition, 1 ) ) );
+  oTmp.appendChild( document.createTextNode( g_zActiveFunction.substring( g_nActivePosition, g_nActivePosition + 1 ) ) );
   oNode.appendChild( oTmp );
   oTmp = document.createElement( "pre" );
   oTmp.id = "MachineStatusProgramAfter";
-  oTmp.appendChild( document.createTextNode( g_zActiveFunction.substr( g_nActivePosition + 1 ) ) );
+  oTmp.appendChild( document.createTextNode( g_zActiveFunction.substring( g_nActivePosition + 1 ) ) );
   oNode.appendChild( oTmp );
 
   oNode = document.getElementById( "MachineStatusOutput" );
@@ -787,7 +817,7 @@ function UpdateUI()
 /* UpdateStatusMessage( sString ): display sString in the status message area */
 function UpdateStatusMessage( sString )
 {
-	oTmp = document.getElementById( "MachineStatusMessagesContainer" );
+  let oTmp = document.getElementById( "MachineStatusMessagesContainer" );
 	while( oTmp.hasChildNodes() ) oTmp.removeChild( oTmp.firstChild );
 	
 	oTmp.appendChild( document.createTextNode( sString ) );
@@ -798,9 +828,9 @@ function debug( n, str ) {
 		UpdateStatusMessage( str );
 	}
 	if( g_nDebugLevel >= n  ) {
-		var oDebug = document.getElementById( "debug" );
+		let oDebug = document.getElementById( "debug" );
 		if( oDebug ) {
-			var oNode = document.createElement( 'pre' );
+			let oNode = document.createElement( 'pre' );
 			oNode.appendChild( document.createTextNode( str ) );
 			oDebug.appendChild( oNode );
 		}
@@ -808,7 +838,7 @@ function debug( n, str ) {
 }
 
 function ClearDebug() {
-	var oDebug = document.getElementById( "debug" );
+	let oDebug = document.getElementById( "debug" );
 	while( oDebug.hasChildNodes() ) {
 		oDebug.removeChild( oDebug.firstChild );
 	}
@@ -819,9 +849,8 @@ function Finished()
 {
   Pause();
   UpdateUI();
-  var d = new Date;
-  var nNow = d.getTime();
-  UpdateStatusMessage( "Finished in " + g_nStepCount + " steps, " + (nNow - g_nStartTime) + " milliseconds." );
+  let nNow = document.timeline.currentTime;
+  UpdateStatusMessage( "Finished in " + g_nStepCount + " steps, " + Math.round(nNow - g_nStartTime) + " milliseconds." );
   g_oCurrentContinuation = function() {};
   
   document.getElementById( "RunButton" ).disabled = true;
@@ -866,21 +895,20 @@ function Step()
     /* Hasn't started running yet. Set up the initial continuation. */
     debug( 2, "Warning: Step() called while current continuation is null!" );
 
-    var zProgram = document.getElementById( "ProgramSource" ).value;
+    let zProgram = document.getElementById( "ProgramSource" ).value;
 
     function c() {
       ExecuteStep( zProgram, 0, Finished );
     }
 
     g_oCurrentContinuation = c;
-    
-    var d = new Date;
-    g_nStartTime = d.getTime();
+    /* Use new fangled tech */
+    g_nStartTime = document.timeline.currentTime;
   }
   
   if( g_bTurbo && g_bRunning) {
-    /* Do 20 steps at a time in turbo mode */
-    for( var i = 0; i < 30; i++ ) {
+    /* Do 30 steps at a time in turbo mode */
+    for( let i = 0; i < 30; i++ ) {
       g_oCurrentContinuation();
       if( !g_bRunning ) break;      /* Hit a breakpoint or program terminated */
     }
